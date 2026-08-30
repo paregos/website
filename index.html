@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="The personal website of Ben Mitchell, a creator based in Sydney."
+    >
+    <title>Ben Mitchell</title>
+    <link rel="icon" type="image/png" href="assets/blue-spider-lily.png">
+    <link rel="stylesheet" href="styles.css">
+    <script type="module" src="/src/weather.js"></script>
+    <script type="module" src="/src/lily.js"></script>
+  </head>
+  <body>
+    <canvas class="weather-canvas" data-weather-canvas aria-hidden="true"></canvas>
+    <main>
+      <header>
+        <p class="name">Ben Mitchell</p>
+        <div class="local-conditions" data-conditions aria-label="Sydney time. Weather loading.">
+          <time data-sydney-clock>--:--</time>
+          <span class="weather-icon" data-weather-icon aria-hidden="true">·</span>
+        </div>
+      </header>
+
+      <div class="page">
+        <div class="words">
+          <h1>A creator,<br><em>or at least trying to be.</em></h1>
+
+          <section class="about" aria-labelledby="about-heading">
+            <h2 id="about-heading">About</h2>
+            <dl class="facts">
+              <div>
+                <dt>Location</dt>
+                <dd>Sydney</dd>
+              </div>
+              <div>
+                <dt>Age</dt>
+                <dd>30</dd>
+              </div>
+              <div>
+                <dt>Languages</dt>
+                <dd>EN / JP <span>(kinda)</span></dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="cool-things" aria-labelledby="cool-heading">
+            <h2 id="cool-heading">Cool things</h2>
+            <p class="coming-soon">
+              <em>Coming soon.</em>
+            </p>
+          </section>
+
+          <nav aria-label="Find Ben elsewhere">
+            <a href="https://www.instagram.com/ben_mitchell_58/">Instagram</a>
+            <a href="https://www.linkedin.com/in/ben-mitchell58">LinkedIn</a>
+            <a href="https://github.com/paregos">GitHub</a>
+          </nav>
+        </div>
+
+        <figure class="flower" data-lily>
+          <img
+            src="assets/blue-spider-lily.png"
+            alt="A blue watercolor spider lily"
+            width="1254"
+            height="1254"
+          >
+          <canvas class="lily-canvas" aria-hidden="true"></canvas>
+          <figcaption>Lycoris radiata, reimagined in blue</figcaption>
+        </figure>
+      </div>
+    </main>
+
+    <dialog class="weather-switcher" data-weather-switcher aria-labelledby="weather-switcher-title">
+      <div class="weather-switcher-heading">
+        <p id="weather-switcher-title">weather override</p>
+        <span aria-hidden="true">w w</span>
+      </div>
+      <div class="weather-options" data-weather-options></div>
+      <p class="weather-switcher-help">↑↓ choose · enter select · esc close</p>
+    </dialog>
+  </body>
+</html>
