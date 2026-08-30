@@ -12,15 +12,26 @@
     <link rel="stylesheet" href="styles.css">
     <script type="module" src="/src/weather.js"></script>
     <script type="module" src="/src/lily.js"></script>
+    <script type="module" src="/src/hotkeys.js"></script>
   </head>
   <body>
     <canvas class="weather-canvas" data-weather-canvas aria-hidden="true"></canvas>
     <main>
       <header>
         <p class="name">Ben Mitchell</p>
-        <div class="local-conditions" data-conditions aria-label="Sydney time. Weather loading.">
-          <time data-sydney-clock>--:--</time>
-          <span class="weather-icon" data-weather-icon aria-hidden="true">·</span>
+        <div class="header-tools">
+          <button
+            class="hotkeys-trigger"
+            type="button"
+            data-hotkeys-trigger
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-label="Show keyboard shortcuts"
+          >[?]</button>
+          <div class="local-conditions" data-conditions aria-label="Sydney time. Weather loading.">
+            <time data-sydney-clock>--:--</time>
+            <span class="weather-icon" data-weather-icon aria-hidden="true">·</span>
+          </div>
         </div>
       </header>
 
@@ -60,16 +71,18 @@
           </nav>
         </div>
 
-        <figure class="flower" data-lily>
-          <img
-            src="assets/blue-spider-lily.png"
-            alt="A blue watercolor spider lily"
-            width="1254"
-            height="1254"
-          >
-          <canvas class="lily-canvas" aria-hidden="true"></canvas>
-          <figcaption>Lycoris radiata, reimagined in blue</figcaption>
-        </figure>
+        <div class="flower-shell">
+          <figure class="flower" data-lily>
+            <img
+              src="assets/blue-spider-lily.png"
+              alt="A blue watercolor spider lily"
+              width="1254"
+              height="1254"
+            >
+            <canvas class="lily-canvas" aria-hidden="true"></canvas>
+            <figcaption>Lycoris radiata, reimagined in blue</figcaption>
+          </figure>
+        </div>
       </div>
     </main>
 
@@ -80,6 +93,23 @@
       </div>
       <div class="weather-options" data-weather-options></div>
       <p class="weather-switcher-help">↑↓ choose · enter select · esc close</p>
+    </dialog>
+
+    <dialog class="hotkeys-card" data-hotkeys-card aria-labelledby="hotkeys-title">
+      <div class="hotkeys-card-heading">
+        <p id="hotkeys-title">keys</p>
+        <span aria-hidden="true">?</span>
+      </div>
+      <dl class="hotkeys-list">
+        <div>
+          <dt><kbd>?</kbd></dt>
+          <dd>toggle this card</dd>
+        </div>
+        <div>
+          <dt><kbd>w w</kbd></dt>
+          <dd>weather override</dd>
+        </div>
+      </dl>
     </dialog>
   </body>
 </html>

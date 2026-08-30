@@ -115,6 +115,12 @@ header p {
   letter-spacing: 0.06em;
 }
 
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
 .weather-icon {
   display: grid;
   width: 1.25em;
@@ -221,6 +227,81 @@ header p {
 .weather-switcher-help {
   padding: 8px 12px 10px;
   border-top: 1px dotted var(--ink);
+}
+
+.hotkeys-card {
+  position: fixed;
+  inset: auto 22px 22px auto;
+  z-index: 20;
+  width: min(220px, calc(100% - 30px));
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+.hotkeys-card:not([open]) {
+  display: none;
+}
+
+.hotkeys-card:focus {
+  outline: none;
+}
+
+.hotkeys-card-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 9px 11px;
+  border-bottom: 1px dotted var(--ink);
+}
+
+.hotkeys-card-heading p,
+.hotkeys-card-heading span {
+  margin: 0;
+  font-size: 0.66rem;
+}
+
+.hotkeys-card-heading p {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.hotkeys-card-heading span {
+  color: #66645e;
+}
+
+.hotkeys-list {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  padding: 7px 11px 9px;
+  font-size: 0.68rem;
+}
+
+.hotkeys-list div {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 9px;
+  align-items: baseline;
+  padding: 3px 0;
+}
+
+.hotkeys-list dt,
+.hotkeys-list dd {
+  margin: 0;
+}
+
+.hotkeys-list dd {
+  color: #66645e;
+}
+
+.hotkeys-list kbd {
+  color: var(--blue);
+  font: inherit;
 }
 
 figcaption {
@@ -355,6 +436,10 @@ nav a:focus-visible {
   color: white;
 }
 
+.flower-shell {
+  position: relative;
+}
+
 .flower {
   --tilt-x: 0deg;
   --tilt-y: 0deg;
@@ -421,6 +506,31 @@ nav a:focus-visible {
   text-transform: none;
 }
 
+.hotkeys-trigger {
+  padding: 3px;
+  border: 0;
+  background: transparent;
+  color: #77746d;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  line-height: 1;
+  opacity: 0.48;
+  cursor: pointer;
+  transition: color 160ms ease, opacity 160ms ease;
+}
+
+.hotkeys-trigger:hover,
+.hotkeys-trigger:focus-visible,
+.hotkeys-trigger[aria-expanded="true"] {
+  color: var(--blue);
+  opacity: 1;
+}
+
+.hotkeys-trigger:focus-visible {
+  outline: 1px dotted currentColor;
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .lily-canvas {
     display: none;
@@ -461,9 +571,10 @@ nav a:focus-visible {
     gap: 10px;
   }
 
-  .flower {
+  .flower-shell {
     order: -1;
     width: min(86%, 430px);
     margin: 0 auto 10px;
   }
+
 }

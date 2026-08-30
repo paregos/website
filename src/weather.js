@@ -352,6 +352,10 @@ function syncWeatherOptions() {
 
 function openWeatherSwitcher() {
   if (!weatherSwitcher || weatherSwitcher.open) return;
+  const hotkeysCard = document.querySelector('[data-hotkeys-card]');
+  const hotkeysTrigger = document.querySelector('[data-hotkeys-trigger]');
+  if (hotkeysCard?.open) hotkeysCard.close();
+  hotkeysTrigger?.setAttribute('aria-expanded', 'false');
   weatherSwitcher.show();
   syncWeatherOptions();
 
