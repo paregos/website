@@ -94,6 +94,14 @@ exceptions. Update this guide afterward so future work follows the new system.
 - `src/hotkeys.js` owns the small shortcut reference card.
 - `src/currently.js` owns the typing lifecycle for the rotating bio line, while
   `src/currently-activities.js` owns its activity pool and context rules.
+- `src/spotify.js` owns the optional `Listening` row. It must fail closed: if
+  the Worker has no active track or is unavailable, keep the row hidden.
+- `worker/` contains the independent Cloudflare Worker for Spotify's
+  now-playing endpoint. Its secrets only exist in Cloudflare; never place
+  Spotify credentials, refresh tokens, or `.dev.vars` files in this repo.
+- `scripts/spotify-authorize.mjs` is a one-off local OAuth helper. It prints a
+  refresh token for direct entry into Cloudflare, and must not be run by an
+  agent or have its output committed.
 - `assets/` contains the transparent watercolor lily variants.
 - `test/` contains zero-dependency Node tests for non-DOM modules.
 
@@ -197,3 +205,10 @@ path `/website/`; local development and non-Pages hosts use `/`. Do not change
 that path unless the repository name changes or the site moves to a custom
 domain. Before deploying for the first time, enable **GitHub Actions** as the
 repository's Pages source in **Settings → Pages**.
+
+The optional Spotify Worker is deployed independently with `npm run
+worker:deploy`. It exposes only `/now-playing`, accepts requests from the
+origins in `worker/wrangler.jsonc`, and requires the Cloudflare secrets
+`SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, and `SPOTIFY_REFRESH_TOKEN`.
+When its `workers.dev` URL is available, set it as the
+`data-now-playing-endpoint` attribute on the `<html>` element in `index.html`.

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-now-playing-endpoint="https://ben-now-playing.ben-mitchell-website.workers.dev/now-playing">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,6 +14,7 @@
     <script type="module" src="/src/weather.js"></script>
     <script type="module" src="/src/lily.js"></script>
     <script type="module" src="/src/currently.js"></script>
+    <script type="module" src="/src/spotify.js"></script>
     <script type="module" src="/src/hotkeys.js"></script>
   </head>
   <body>
@@ -59,6 +60,16 @@
               <div class="currently">
                 <dt>Currently</dt>
                 <dd><span class="currently-value" data-currently>Vibecoding</span></dd>
+              </div>
+              <div class="now-playing" data-now-playing hidden>
+                <dt>Listening</dt>
+                <dd>
+                  <a data-now-playing-link rel="noreferrer" target="_blank">
+                    <span data-now-playing-track></span>
+                    <span aria-hidden="true"> — </span>
+                    <span data-now-playing-artist></span>
+                  </a>
+                </dd>
               </div>
             </dl>
           </section>

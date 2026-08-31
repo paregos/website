@@ -8,7 +8,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test test/*.test.js",
-    "check": "npm run test && npm run build"
+    "check": "npm run test && npm run build",
+    "worker:dev": "npx --yes wrangler dev --config worker/wrangler.jsonc",
+    "worker:deploy": "npx --yes wrangler deploy --config worker/wrangler.jsonc",
+    "spotify:authorize": "node scripts/spotify-authorize.mjs"
   },
   "dependencies": {
     "ogl": "1.0.11"

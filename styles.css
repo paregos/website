@@ -436,6 +436,18 @@ section dl {
   content: "— ";
 }
 
+.now-playing a {
+  color: var(--ink);
+  text-decoration-color: var(--accent);
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+
+.now-playing a:hover,
+.now-playing a:focus-visible {
+  color: var(--accent);
+}
+
 .facts dd .currently-value {
   color: var(--ink);
   font-style: normal;
