@@ -10,6 +10,7 @@
     <title>Ben Mitchell</title>
     <link rel="icon" type="image/png" href="assets/blue-spider-lily.png">
     <link rel="stylesheet" href="styles.css">
+    <script type="module" src="/src/theme.js"></script>
     <script type="module" src="/src/weather.js"></script>
     <script type="module" src="/src/lily.js"></script>
     <script type="module" src="/src/hotkeys.js"></script>
@@ -95,6 +96,15 @@
       <p class="weather-switcher-help">↑↓ choose · enter select · esc close</p>
     </dialog>
 
+    <dialog class="weather-switcher theme-switcher" data-theme-switcher aria-labelledby="theme-switcher-title">
+      <div class="weather-switcher-heading">
+        <p id="theme-switcher-title">colour theme</p>
+        <span aria-hidden="true">t t</span>
+      </div>
+      <div class="weather-options" data-theme-options></div>
+      <p class="weather-switcher-help">↑↓ choose · enter select · esc close</p>
+    </dialog>
+
     <dialog class="hotkeys-card" data-hotkeys-card aria-labelledby="hotkeys-title">
       <div class="hotkeys-card-heading">
         <p id="hotkeys-title">keys</p>
@@ -108,6 +118,10 @@
         <div>
           <dt><kbd>w w</kbd></dt>
           <dd>weather override</dd>
+        </div>
+        <div>
+          <dt><kbd>t t</kbd></dt>
+          <dd>colour theme</dd>
         </div>
       </dl>
     </dialog>

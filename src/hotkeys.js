@@ -6,7 +6,9 @@ if (trigger && card) {
     if (card.open) return;
 
     const weatherSwitcher = document.querySelector('[data-weather-switcher]');
+    const themeSwitcher = document.querySelector('[data-theme-switcher]');
     if (weatherSwitcher?.open) weatherSwitcher.close();
+    if (themeSwitcher?.open) themeSwitcher.close();
 
     card.show();
     trigger.setAttribute('aria-expanded', 'true');

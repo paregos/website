@@ -354,7 +354,9 @@ function openWeatherSwitcher() {
   if (!weatherSwitcher || weatherSwitcher.open) return;
   const hotkeysCard = document.querySelector('[data-hotkeys-card]');
   const hotkeysTrigger = document.querySelector('[data-hotkeys-trigger]');
+  const themeSwitcher = document.querySelector('[data-theme-switcher]');
   if (hotkeysCard?.open) hotkeysCard.close();
+  if (themeSwitcher?.open) themeSwitcher.close();
   hotkeysTrigger?.setAttribute('aria-expanded', 'false');
   weatherSwitcher.show();
   syncWeatherOptions();

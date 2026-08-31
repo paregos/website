@@ -13,6 +13,7 @@ const flower = document.querySelector('[data-lily]');
 const image = flower?.querySelector('img');
 const canvas = flower?.querySelector('.lily-canvas');
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const THEME_TRANSITION_MS = 950;
 
 if (flower && image && canvas && !reduceMotion.matches) {
   startLily().catch(() => {
@@ -33,6 +34,10 @@ async function startLily() {
     await image.decode();
   }
 
+  const initialTextureImage = new Image();
+  initialTextureImage.src = image.currentSrc || image.src;
+  if (initialTextureImage.decode) await initialTextureImage.decode();
+
   const renderer = new Renderer({
     canvas,
     alpha: true,
@@ -49,12 +54,16 @@ async function startLily() {
   const scene = new Transform();
   const pointer = new Vec2(0.5, 0.55);
   const pointerTarget = new Vec2(0.5, 0.55);
-  const texture = new Texture(gl, {
-    image,
+  const initialTexture = new Texture(gl, {
+    image: initialTextureImage,
     generateMipmaps: false,
     minFilter: gl.LINEAR,
     magFilter: gl.LINEAR,
   });
+  const themeTextures = new Map();
+  const themeTexturePromises = new Map();
+  let currentTexture = initialTexture;
+  let incomingTexture = initialTexture;
 
   const lilyProgram = new Program(gl, {
     transparent: true,
@@ -75,15 +84,18 @@ async function startLily() {
       precision highp float;
 
       uniform sampler2D tMap;
+      uniform sampler2D tNextMap;
       uniform vec2 uPointer;
       uniform float uTime;
       uniform float uHover;
       uniform float uPulse;
+      uniform float uThemeTransition;
       uniform float uWindStrength;
       uniform float uWindDirection;
       uniform float uRainStrength;
       uniform float uWeatherMute;
       uniform float uHeatStrength;
+      uniform vec3 uAccentLight;
 
       varying vec2 vUv;
 
@@ -99,7 +111,15 @@ async function startLily() {
         float pulseRing = exp(-abs(distanceToPointer - pulseRadius) * 55.0);
         pulseRing *= sin(max(uPulse, 0.0) * 3.14159) * 0.014;
 
+        vec2 themeDelta = vUv - vec2(0.5, 0.52);
+        float themeDistance = length(themeDelta);
+        vec2 themeDirection = normalize(themeDelta + vec2(0.0001));
+        float themeRadius = max(uThemeTransition, 0.0) * 0.74;
+        float themeRing = exp(-abs(themeDistance - themeRadius) * 52.0);
+        themeRing *= sin(max(uThemeTransition, 0.0) * 3.14159) * 0.016;
+
         vec2 warpedUv = vUv + direction * (softWave + pulseRing);
+        warpedUv += themeDirection * themeRing;
         warpedUv.x += sin(vUv.y * 9.0 + uTime * 0.75) * 0.0008 * uHover;
 
         vec2 wind = vec2(cos(uWindDirection), sin(uWindDirection));
@@ -113,9 +133,20 @@ async function startLily() {
         warpedUv.x += heatWave * uHeatStrength;
         warpedUv.y += sin(vUv.x * 34.0 + uTime * 1.7) * uHeatStrength * 0.28;
 
-        vec4 pigment = texture2D(tMap, warpedUv);
-        float blueBloom = exp(-distanceToPointer * 5.0) * uHover * 0.055;
-        pigment.b = min(1.0, pigment.b + blueBloom * pigment.a);
+        vec4 oldPigment = texture2D(tMap, warpedUv);
+        vec4 nextPigment = texture2D(tNextMap, warpedUv);
+        float themeMix = 1.0 - smoothstep(
+          themeRadius - 0.035,
+          themeRadius + 0.035,
+          themeDistance
+        );
+        themeMix *= step(0.0, uThemeTransition);
+        vec4 pigment = mix(oldPigment, nextPigment, themeMix);
+        float accentBloom = exp(-distanceToPointer * 5.0) * uHover * 0.055;
+        pigment.rgb = min(
+          vec3(1.0),
+          pigment.rgb + uAccentLight * accentBloom * pigment.a
+        );
 
         float luminance = dot(pigment.rgb, vec3(0.299, 0.587, 0.114));
         vec3 weatherGrey = vec3(luminance) * vec3(0.96, 0.98, 1.02);
@@ -125,16 +156,19 @@ async function startLily() {
       }
     `,
     uniforms: {
-      tMap: { value: texture },
+      tMap: { value: currentTexture },
+      tNextMap: { value: currentTexture },
       uPointer: { value: pointer },
       uTime: { value: 0 },
       uHover: { value: 0 },
       uPulse: { value: -1 },
+      uThemeTransition: { value: -1 },
       uWindStrength: { value: 0 },
       uWindDirection: { value: 0 },
       uRainStrength: { value: 0 },
       uWeatherMute: { value: 0 },
       uHeatStrength: { value: 0 },
+      uAccentLight: { value: new Float32Array([0.16, 0.42, 0.96]) },
     },
   });
 
@@ -199,17 +233,20 @@ async function startLily() {
       varying float vAlpha;
       varying float vShade;
 
+      uniform vec3 uAccentLight;
+      uniform vec3 uAccentDeep;
+
       void main() {
         float dotShape = smoothstep(0.5, 0.14, length(gl_PointCoord - 0.5));
-        vec3 paleBlue = vec3(0.16, 0.42, 0.96);
-        vec3 deepBlue = vec3(0.035, 0.12, 0.56);
-        vec3 color = mix(deepBlue, paleBlue, vShade);
+        vec3 color = mix(uAccentDeep, uAccentLight, vShade);
         gl_FragColor = vec4(color, dotShape * vAlpha);
       }
     `,
     uniforms: {
       uBurst: { value: -1 },
       uDpr: { value: renderer.dpr },
+      uAccentLight: { value: new Float32Array([0.16, 0.42, 0.96]) },
+      uAccentDeep: { value: new Float32Array([0.035, 0.12, 0.56]) },
     },
   });
 
@@ -231,6 +268,9 @@ async function startLily() {
   let tiltTargetY = 0;
   let weatherIsMoving = false;
   let burstStarted = -1;
+  let themeTransitionStarted = -1;
+  let themeRequestId = 0;
+  let currentThemeId = null;
   let frameId = 0;
 
   function resize() {
@@ -285,9 +325,27 @@ async function startLily() {
       if (burst >= 1) burstStarted = -1;
     }
 
+    let themeTransition = -1;
+    if (themeTransitionStarted >= 0) {
+      const linearProgress = Math.min(
+        (time - themeTransitionStarted) / THEME_TRANSITION_MS,
+        1,
+      );
+
+      if (linearProgress >= 1) {
+        currentTexture = incomingTexture;
+        lilyProgram.uniforms.tMap.value = currentTexture;
+        lilyProgram.uniforms.tNextMap.value = currentTexture;
+        themeTransitionStarted = -1;
+      } else {
+        themeTransition = linearProgress;
+      }
+    }
+
     lilyProgram.uniforms.uTime.value = time * 0.001;
     lilyProgram.uniforms.uHover.value = hover;
     lilyProgram.uniforms.uPulse.value = burst;
+    lilyProgram.uniforms.uThemeTransition.value = themeTransition;
     particleProgram.uniforms.uBurst.value = burst;
 
     renderer.render({ scene });
@@ -302,6 +360,7 @@ async function startLily() {
       hover > 0.002 ||
       hoverTarget > 0 ||
       burstStarted >= 0 ||
+      themeTransitionStarted >= 0 ||
       !pointerIsSettled ||
       !tiltIsSettled ||
       (weatherIsMoving && !document.hidden);
@@ -364,8 +423,125 @@ async function startLily() {
     if (weatherIsMoving) ensureAnimation();
   }
 
+  function waitForIdleFrame() {
+    return new Promise((resolve) => {
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(resolve, { timeout: 120 });
+      } else {
+        setTimeout(resolve, 32);
+      }
+    });
+  }
+
+  function prepareThemeTexture(theme, useIdleTime = false) {
+    if (!theme) return Promise.resolve(null);
+    if (themeTextures.has(theme.id)) {
+      return Promise.resolve(themeTextures.get(theme.id));
+    }
+    if (themeTexturePromises.has(theme.id)) {
+      return themeTexturePromises.get(theme.id);
+    }
+
+    const preparation = (async () => {
+      const nextImage = theme.imageElement || new Image();
+      if (!theme.imageElement) nextImage.src = theme.image;
+
+      if (nextImage.decode) {
+        await nextImage.decode();
+      } else if (!nextImage.complete) {
+        await new Promise((resolve, reject) => {
+          nextImage.addEventListener('load', resolve, { once: true });
+          nextImage.addEventListener('error', reject, { once: true });
+        });
+      }
+
+      let textureImage = nextImage;
+      if (window.createImageBitmap && nextImage.naturalWidth > 900) {
+        try {
+          textureImage = await createImageBitmap(nextImage, {
+            imageOrientation: 'flipY',
+            resizeWidth: 900,
+            resizeHeight: 900,
+            resizeQuality: 'high',
+          });
+        } catch {
+          textureImage = nextImage;
+        }
+      }
+
+      const texture = new Texture(gl, {
+        image: textureImage,
+        generateMipmaps: false,
+        minFilter: gl.LINEAR,
+        magFilter: gl.LINEAR,
+      });
+
+      if (useIdleTime) await waitForIdleFrame();
+
+      // Upload while the old flower is still completely visible. The ripple
+      // can then use the texture without stalling its first animation frame.
+      texture.update(1);
+      themeTextures.set(theme.id, texture);
+      themeTexturePromises.delete(theme.id);
+      return texture;
+    })().catch((error) => {
+      themeTexturePromises.delete(theme.id);
+      throw error;
+    });
+
+    themeTexturePromises.set(theme.id, preparation);
+    return preparation;
+  }
+
+  async function transitionThemeImage(theme) {
+    const requestId = ++themeRequestId;
+    const preparedTexture = await prepareThemeTexture(theme);
+    if (requestId !== themeRequestId || !preparedTexture) return;
+
+    incomingTexture = preparedTexture;
+    lilyProgram.uniforms.tNextMap.value = incomingTexture;
+    lilyProgram.uniforms.uThemeTransition.value = 0;
+
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    if (requestId !== themeRequestId) return;
+
+    themeTransitionStarted = performance.now();
+    ensureAnimation();
+  }
+
+  function applyTheme(theme) {
+    if (!theme) return;
+
+    const shouldTransition = currentThemeId !== null && currentThemeId !== theme.id;
+    currentThemeId = theme.id;
+    if (!shouldTransition) themeTextures.set(theme.id, currentTexture);
+
+    const light = new Float32Array(theme.light);
+    const deep = new Float32Array(theme.deep);
+    lilyProgram.uniforms.uAccentLight.value = light;
+    particleProgram.uniforms.uAccentLight.value = light;
+    particleProgram.uniforms.uAccentDeep.value = deep;
+    flower.setAttribute(
+      'aria-label',
+      `Interactive ${theme.colorName} spider lily. Move the pointer or press Enter to release pigment.`,
+    );
+    if (shouldTransition) {
+      transitionThemeImage(theme).catch(() => {});
+    } else {
+      renderer.render({ scene });
+    }
+  }
+
   window.addEventListener('siteweatherchange', (event) => {
     applyWeather(event.detail);
+  });
+  window.addEventListener('sitethemechange', (event) => {
+    applyTheme(event.detail);
+  });
+  window.prepareLilyTheme = prepareThemeTexture;
+  image.addEventListener('load', () => {
+    resize();
+    ensureAnimation();
   });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && weatherIsMoving) ensureAnimation();
@@ -385,10 +561,23 @@ async function startLily() {
   flower.setAttribute('tabindex', '0');
   flower.setAttribute(
     'aria-label',
-    'Interactive blue spider lily. Move the pointer or press Enter to release pigment.',
+    'Interactive spider lily. Move the pointer or press Enter to release pigment.',
   );
 
   resize();
   applyWeather(window.siteWeather);
+  applyTheme(window.siteTheme);
   flower.classList.add('is-alive');
+
+  const warmThemeTextures = async () => {
+    for (const theme of window.siteThemes || []) {
+      if (theme.id === currentThemeId) continue;
+      try {
+        await prepareThemeTexture(theme, true);
+      } catch {
+        // On-demand preparation still retries if an idle preload fails.
+      }
+    }
+  };
+  waitForIdleFrame().then(warmThemeTextures);
 }

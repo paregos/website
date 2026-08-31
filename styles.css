@@ -1,12 +1,28 @@
 :root {
   --ink: #11110f;
   --paper: #f7f6f0;
-  --blue: #1646cb;
+  --accent: #1646cb;
   --faint: #d8d6ce;
   --ambient-light: rgba(255, 247, 220, 0.32);
   --ambient-wash: rgba(255, 255, 255, 0);
   --serif: Georgia, "Times New Roman", Times, serif;
   --mono: "Courier New", Courier, monospace;
+}
+
+:root[data-theme="red"] {
+  --accent: #b9232d;
+}
+
+:root[data-theme="gold"] {
+  --accent: #946200;
+}
+
+:root[data-theme="indigo"] {
+  --accent: #5735a5;
+}
+
+:root[data-theme="emerald"] {
+  --accent: #087257;
 }
 
 * {
@@ -77,7 +93,7 @@ body[data-weather="fog"] {
 }
 
 ::selection {
-  background: var(--blue);
+  background: var(--accent);
   color: white;
 }
 
@@ -126,7 +142,7 @@ header p {
   width: 1.25em;
   height: 1.25em;
   place-items: center;
-  color: var(--blue);
+  color: var(--accent);
   font-size: 0.92rem;
   line-height: 1;
   transition: opacity 500ms ease;
@@ -211,13 +227,23 @@ header p {
 .weather-options button:focus-visible,
 .weather-options button[aria-selected="true"] {
   outline: none;
-  background: var(--blue);
+  background: var(--accent);
   color: white;
 }
 
 .weather-option-icon,
 .weather-option-key {
   text-align: center;
+}
+
+.theme-option-swatch {
+  width: 8px;
+  height: 8px;
+  margin: auto;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
 }
 
 .weather-option-key {
@@ -300,7 +326,7 @@ header p {
 }
 
 .hotkeys-list kbd {
-  color: var(--blue);
+  color: var(--accent);
   font: inherit;
 }
 
@@ -357,7 +383,7 @@ h2 {
 }
 
 h2 span {
-  color: var(--blue);
+  color: var(--accent);
 }
 
 section p,
@@ -386,7 +412,7 @@ section dl {
 
 .facts dt::before {
   content: "• ";
-  color: var(--blue);
+  color: var(--accent);
 }
 
 .facts dd {
@@ -394,12 +420,12 @@ section dl {
 }
 
 .facts dd span {
-  color: var(--blue);
+  color: var(--accent);
   font-style: italic;
 }
 
 .coming-soon em {
-  color: var(--blue);
+  color: var(--accent);
   font-size: 0.9rem;
 }
 
@@ -432,7 +458,7 @@ nav a:nth-child(even) {
 
 nav a:hover,
 nav a:focus-visible {
-  background: var(--blue);
+  background: var(--accent);
   color: white;
 }
 
@@ -452,7 +478,7 @@ nav a:focus-visible {
 }
 
 .flower.is-alive:focus-visible {
-  outline: 1px dashed var(--blue);
+  outline: 1px dashed var(--accent);
   outline-offset: 12px;
 }
 
@@ -522,7 +548,7 @@ nav a:focus-visible {
 .hotkeys-trigger:hover,
 .hotkeys-trigger:focus-visible,
 .hotkeys-trigger[aria-expanded="true"] {
-  color: var(--blue);
+  color: var(--accent);
   opacity: 1;
 }
 
