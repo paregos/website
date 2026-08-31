@@ -13,6 +13,7 @@
     <script type="module" src="/src/theme.js"></script>
     <script type="module" src="/src/weather.js"></script>
     <script type="module" src="/src/lily.js"></script>
+    <script type="module" src="/src/portrait.js"></script>
     <script type="module" src="/src/currently.js"></script>
     <script type="module" src="/src/spotify.js"></script>
     <script type="module" src="/src/hotkeys.js"></script>
@@ -40,7 +41,30 @@
 
       <div class="page">
         <div class="words">
-          <h1>A creator,<br><em>or at least trying to be.</em></h1>
+          <div class="intro">
+            <figure class="ascii-portrait" data-ascii-portrait>
+              <button
+                class="ascii-portrait-frame"
+                type="button"
+                data-ascii-portrait-next
+                aria-label="Portrait of Ben. Show the next portrait."
+              >
+                <img
+                  data-ascii-portrait-fallback
+                  src="assets/portraits/portrait-clean.webp"
+                  alt="Ben wearing a dark jacket"
+                  width="900"
+                  height="900"
+                >
+                <canvas data-ascii-portrait-canvas aria-hidden="true"></canvas>
+              </button>
+              <figcaption>
+                <span data-ascii-portrait-name>portrait_01.txt</span>
+                <span data-ascii-portrait-count>01 / 05</span>
+              </figcaption>
+            </figure>
+            <h1 class="intro-note">A creator, <em>or at least trying to be.</em></h1>
+          </div>
 
           <section class="about" aria-labelledby="about-heading">
             <h2 id="about-heading">About</h2>

@@ -352,24 +352,145 @@ p {
   margin-top: 0;
 }
 
-h1 {
-  max-width: 700px;
-  margin-bottom: 34px;
-  font-size: clamp(3.5rem, 7vw, 6rem);
-  font-weight: 400;
-  letter-spacing: -0.055em;
-  line-height: 0.92;
+.intro {
+  width: min(100%, 500px);
+  margin-bottom: 26px;
 }
 
-h1 em {
+.intro-note {
+  margin: 7px 0 0;
+  color: #66645e;
+  font-size: 0.78rem;
   font-weight: 400;
+  letter-spacing: 0.015em;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.intro-note em {
+  font-weight: inherit;
+}
+
+.ascii-portrait {
+  width: 100%;
+  margin: 0;
+}
+
+.ascii-portrait-frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-bottom: 1px dotted var(--ink);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.ascii-portrait-frame::before,
+.ascii-portrait-frame::after {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+
+.ascii-portrait-frame::before {
+  content:
+    "00110110  :::  7f 2a 19  ..  01001010  /  rx-03  /  11001001\A"
+    "..:i1X5H  0101  a8 4c 11  //  001101  ::  buffer  ::  9B&@\A"
+    "1100  rssi  02:17  ;;;  A253hM  010010  x09  ..  incoming\A"
+    "::  3hMHGS#  00101101  ..  75 1c  XA  1010  ;;  2A22\A"
+    "010101  ..  carrier/noise  ..  irsXA2  ::  000111  5hMH\A"
+    "7f  19  2c  8a  ::  11001010  ..  signal  ..  00110101\A"
+    "..:;irsXA253hMHGS#9B&@  /  0100  /  ff 0a 33  /  pending\A"
+    "101101  ::  24 68 91  ..  rssi  ;;  0010  ..  X5H  1101";
+  top: 50%;
+  left: 50%;
+  width: max-content;
+  max-width: 94%;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: clamp(0.3rem, 0.68vw, 0.46rem);
+  line-height: 1.55;
+  opacity: 0.28;
+  transform: translate(-50%, -55%);
+  white-space: pre;
+}
+
+.ascii-portrait-frame::after {
+  content: "// resolving portrait_01.txt";
+  top: calc(50% + 55px);
+  left: 50%;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.035em;
+  opacity: 0.72;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.ascii-portrait-frame:focus-visible {
+  outline: 1px dashed var(--accent);
+  outline-offset: 5px;
+}
+
+.ascii-portrait img,
+.ascii-portrait canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ascii-portrait img {
+  object-fit: cover;
+  object-position: 50% 36%;
+  filter: grayscale(1) contrast(1.45);
+  opacity: 0;
+}
+
+.ascii-portrait canvas {
+  z-index: 2;
+  opacity: 0;
+}
+
+.ascii-portrait.is-ready img,
+.ascii-portrait.is-ready .ascii-portrait-frame::before,
+.ascii-portrait.is-ready .ascii-portrait-frame::after {
+  opacity: 0;
+}
+
+.ascii-portrait.is-ready canvas {
+  opacity: 1;
+}
+
+.ascii-portrait figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding-top: 5px;
+  color: #66645e;
+  font-size: 0.58rem;
+  letter-spacing: 0.035em;
+  text-transform: lowercase;
+}
+
+.ascii-portrait figcaption span:first-child {
+  color: var(--accent);
 }
 
 section {
   display: grid;
   grid-template-columns: 112px minmax(0, 1fr);
   gap: 18px;
-  max-width: 640px;
+  width: 100%;
+  max-width: 500px;
   padding: 17px 0;
   border-top: 1px dotted var(--ink);
 }
@@ -629,6 +750,10 @@ nav a:focus-visible {
     transform: rotate(2deg);
     transition: none;
   }
+
+  .ascii-portrait img {
+    transition: none;
+  }
 }
 
 @media (max-width: 760px) {
@@ -643,12 +768,19 @@ nav a:focus-visible {
 
   .page {
     grid-template-columns: 1fr;
+    gap: 0;
     min-height: auto;
     padding: 46px 0 34px;
   }
 
-  h1 {
-    font-size: clamp(3.1rem, 14vw, 4.5rem);
+  .words {
+    display: contents;
+  }
+
+  .intro {
+    order: -2;
+    width: min(100%, 520px);
+    margin-inline: auto;
   }
 
   section {
@@ -656,10 +788,24 @@ nav a:focus-visible {
     gap: 10px;
   }
 
+  .about,
+  .cool-things {
+    width: calc(100% - 20px);
+    margin-inline: auto;
+    padding-inline: 10px;
+  }
+
+  nav {
+    justify-content: center;
+    width: calc(100% - 20px);
+    margin-inline: auto;
+    padding-inline: 10px;
+  }
+
   .flower-shell {
     order: -1;
     width: min(86%, 430px);
-    margin: 0 auto 10px;
+    margin: 16px auto 26px;
   }
 
 }

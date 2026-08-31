@@ -19,6 +19,8 @@ update this guide to describe the new baseline.
 - Ambient weather changes the lighting and adds restrained canvas effects.
 - The spider lily is interactive: pointer movement creates gentle distortion,
   clicking releases a pigment ripple, and windy or hot weather affects it.
+- A theme-accented ASCII portrait replaces the former oversized introduction.
+  It changes photos only when deliberately clicked; there is no slideshow.
 - The colour theme rotates daily using the Sydney date. Manual overrides are
   available through the `t t` shortcut.
 - A small `Currently` fact cycles through playful, context-aware activities
@@ -94,6 +96,9 @@ exceptions. Update this guide afterward so future work follows the new system.
 - `src/hotkeys.js` owns the small shortcut reference card.
 - `src/currently.js` owns the typing lifecycle for the rotating bio line, while
   `src/currently-activities.js` owns its activity pool and context rules.
+- `src/portrait.js` samples the small WebP sources in `assets/portraits/` into
+  the ASCII portrait, handles its restrained signal animation, and performs
+  the click-driven character dissolve between images.
 - `src/spotify.js` owns the optional `Listening` row. It must fail closed: if
   the Worker has no active track or is unavailable, keep the row hidden.
 - `worker/` contains the independent Cloudflare Worker for Spotify's
@@ -146,6 +151,11 @@ In particular:
 
 - do not reintroduce DOM screenshots, full-page WebGL captures, large
   `backdrop-filter` bands, or cloned-page transition layers;
+- keep the ASCII portrait on its small fixed character grid, preload alternate
+  portraits during idle time, and never animate it as an automatic slideshow;
+- keep the portrait's immediate/no-JavaScript fallback as the CSS ASCII signal
+  buffer. Do not reveal the photographic `<img>` while the canvas initialises;
+  that creates a distracting photograph-to-ASCII flash.
 - keep animation work on `requestAnimationFrame` and stop rendering when an
   effect is inactive;
 - retain the device-pixel-ratio cap and idle texture preparation;
@@ -212,3 +222,6 @@ origins in `worker/wrangler.jsonc`, and requires the Cloudflare secrets
 `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, and `SPOTIFY_REFRESH_TOKEN`.
 When its `workers.dev` URL is available, set it as the
 `data-now-playing-endpoint` attribute on the `<html>` element in `index.html`.
+The complete operational guide, including Spotify's six-month refresh-token
+reauthorisation procedure, lives in `README.md`. Keep both documents aligned
+when this integration changes.
