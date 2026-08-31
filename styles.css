@@ -406,6 +406,10 @@ section dl {
   gap: 7px;
 }
 
+.facts div[hidden] {
+  display: none;
+}
+
 .facts dt {
   flex: 0 0 auto;
   color: #66645e;
