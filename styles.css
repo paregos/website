@@ -427,6 +427,10 @@ section dl {
   color: var(--accent);
 }
 
+.facts dt::after {
+  content: " —";
+}
+
 .facts dd {
   margin: 0;
 }
@@ -434,10 +438,6 @@ section dl {
 .facts dd span {
   color: var(--accent);
   font-style: italic;
-}
-
-.currently dd::before {
-  content: "— ";
 }
 
 .now-playing a {
