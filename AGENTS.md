@@ -188,3 +188,12 @@ off visual or interactive changes, also check:
 - at least two flower theme transitions;
 - the flower click interaction;
 - the relevant weather override if weather or shader behavior changed.
+
+## Deployment
+
+GitHub Pages deployment is defined in `.github/workflows/deploy-pages.yml`.
+The site is a project Pages site, so GitHub Actions builds it with the Vite base
+path `/website/`; local development and non-Pages hosts use `/`. Do not change
+that path unless the repository name changes or the site moves to a custom
+domain. Before deploying for the first time, enable **GitHub Actions** as the
+repository's Pages source in **Settings → Pages**.
