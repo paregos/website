@@ -402,12 +402,20 @@ section dl {
 
 .facts div {
   display: flex;
+  align-items: flex-start;
   gap: 7px;
 }
 
 .facts dt {
+  flex: 0 0 auto;
   color: #66645e;
+  white-space: nowrap;
   text-transform: lowercase;
+}
+
+.facts dd {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .facts dt::before {
@@ -422,6 +430,37 @@ section dl {
 .facts dd span {
   color: var(--accent);
   font-style: italic;
+}
+
+.currently dd::before {
+  content: "— ";
+}
+
+.facts dd .currently-value {
+  color: var(--ink);
+  font-style: normal;
+}
+
+.currently-value::after {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 0.9em;
+  margin-left: 3px;
+  background: var(--accent);
+  vertical-align: -0.08em;
+  animation: currently-cursor 920ms steps(1, end) infinite;
+}
+
+.currently-value.is-typing::after {
+  animation: none;
+  opacity: 1;
+}
+
+@keyframes currently-cursor {
+  50% {
+    opacity: 0;
+  }
 }
 
 .coming-soon em {
@@ -558,6 +597,10 @@ nav a:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .currently-value::after {
+    animation: none;
+  }
+
   .lily-canvas {
     display: none;
   }
