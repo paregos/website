@@ -1,46 +1,9 @@
-import blueLily from '../assets/blue-spider-lily.png';
-import emeraldLily from '../assets/emerald-spider-lily.png';
-import goldLily from '../assets/gold-spider-lily.png';
-import indigoLily from '../assets/indigo-spider-lily.png';
-import redLily from '../assets/red-spider-lily.png';
+import { prepareThemeVisual, publishTheme } from './site-state.js';
+import { findTheme, THEMES, THEME_PRESETS } from './themes.js';
 
 const SYDNEY_TIME_ZONE = 'Australia/Sydney';
 const THEME_OVERRIDE_KEY = 'ben-mitchell-theme-override-v1';
 const DOUBLE_PRESS_MS = 420;
-
-const THEMES = [
-  {
-    id: 'blue', key: '1', name: 'Cobalt', colorName: 'blue', image: blueLily,
-    accent: '#1646cb', deep: [0.035, 0.12, 0.56], light: [0.16, 0.42, 0.96],
-  },
-  {
-    id: 'red', key: '2', name: 'Vermilion', colorName: 'red', image: redLily,
-    accent: '#b9232d', deep: [0.45, 0.03, 0.06], light: [0.96, 0.24, 0.22],
-  },
-  {
-    id: 'gold', key: '3', name: 'Gold', colorName: 'gold', image: goldLily,
-    accent: '#946200', deep: [0.42, 0.2, 0.015], light: [1.0, 0.67, 0.12],
-  },
-  {
-    id: 'indigo', key: '4', name: 'Indigo', colorName: 'indigo', image: indigoLily,
-    accent: '#5735a5', deep: [0.16, 0.06, 0.37], light: [0.54, 0.4, 0.93],
-  },
-  {
-    id: 'emerald', key: '5', name: 'Emerald', colorName: 'emerald', image: emeraldLily,
-    accent: '#087257', deep: [0.02, 0.26, 0.18], light: [0.1, 0.72, 0.48],
-  },
-];
-window.siteThemes = THEMES;
-
-const PRESETS = [
-  { id: 'auto', key: '0', name: 'Daily rotation', theme: null },
-  ...THEMES.map((theme) => ({
-    id: theme.id,
-    key: theme.key,
-    name: theme.name,
-    theme,
-  })),
-];
 
 const dateFormatter = new Intl.DateTimeFormat('en-CA', {
   timeZone: SYDNEY_TIME_ZONE,
@@ -48,8 +11,6 @@ const dateFormatter = new Intl.DateTimeFormat('en-CA', {
   month: '2-digit',
   day: '2-digit',
 });
-const preloadedThemeImages = new Map();
-
 const switcher = document.querySelector('[data-theme-switcher]');
 const options = document.querySelector('[data-theme-options]');
 const flowerImage = document.querySelector('[data-lily] img');
@@ -82,7 +43,7 @@ function getDailyTheme() {
 function readOverride() {
   try {
     const stored = sessionStorage.getItem(THEME_OVERRIDE_KEY);
-    return THEMES.some((theme) => theme.id === stored) ? stored : null;
+    return findTheme(stored)?.id || null;
   } catch {
     return null;
   }
@@ -97,29 +58,33 @@ function writeOverride(themeId) {
   }
 }
 
-async function preloadTheme(theme) {
-  if (!theme || preloadedThemeImages.has(theme.id)) return;
-
-  const themeUrl = theme ? new URL(theme.image, window.location.href).href : '';
-  if (flowerImage?.currentSrc === themeUrl) {
-    preloadedThemeImages.set(theme.id, flowerImage);
-    return;
-  }
+async function preloadThemeImage(theme) {
+  const themeUrl = new URL(theme.image, window.location.href).href;
+  if (flowerImage?.currentSrc === themeUrl) return;
 
   const preload = new Image();
   preload.src = theme.image;
+  if (preload.decode) {
+    await preload.decode();
+  } else {
+    await new Promise((resolve, reject) => {
+      preload.addEventListener('load', resolve, { once: true });
+      preload.addEventListener('error', reject, { once: true });
+    });
+  }
+}
+
+async function prepareTheme(theme, options) {
   try {
-    if (preload.decode) {
-      await preload.decode();
-    } else {
-      await new Promise((resolve, reject) => {
-        preload.addEventListener('load', resolve, { once: true });
-        preload.addEventListener('error', reject, { once: true });
-      });
+    const preparedByFlower = await prepareThemeVisual(theme, options);
+    if (!preparedByFlower) await preloadThemeImage(theme);
+  } catch (error) {
+    console.warn(`[theme] Could not prepare ${theme.id} before switching.`, error);
+    try {
+      await preloadThemeImage(theme);
+    } catch (fallbackError) {
+      console.warn(`[theme] Could not preload ${theme.id}.`, fallbackError);
     }
-    preloadedThemeImages.set(theme.id, preload);
-  } catch {
-    // The visible image still has its normal browser loading fallback.
   }
 }
 
@@ -128,11 +93,7 @@ function applyTheme(theme, isOverride = false) {
     return;
   }
 
-  currentTheme = {
-    ...theme,
-    isOverride,
-    imageElement: preloadedThemeImages.get(theme.id),
-  };
+  currentTheme = { ...theme, isOverride };
   document.documentElement.dataset.theme = theme.id;
 
   if (flowerImage) {
@@ -146,13 +107,12 @@ function applyTheme(theme, isOverride = false) {
   }
   if (favicon) favicon.href = theme.image;
 
-  window.siteTheme = currentTheme;
   updateThemeSelection();
-  window.dispatchEvent(new CustomEvent('sitethemechange', { detail: currentTheme }));
+  publishTheme(currentTheme);
 }
 
 function applyCurrentTheme() {
-  const override = THEMES.find((theme) => theme.id === activeOverride);
+  const override = findTheme(activeOverride);
   applyTheme(override || getDailyTheme(), Boolean(override));
 }
 
@@ -162,8 +122,7 @@ async function selectPreset(preset) {
   closeSwitcher();
 
   const theme = preset.theme || getDailyTheme();
-  if (window.prepareLilyTheme) await window.prepareLilyTheme(theme);
-  else await preloadTheme(theme);
+  await prepareTheme(theme);
   applyTheme(theme, Boolean(preset.theme));
 }
 
@@ -202,7 +161,7 @@ function setupSwitcher() {
   options.setAttribute('role', 'listbox');
   options.setAttribute('aria-label', 'Color theme override');
 
-  for (const preset of PRESETS) {
+  for (const preset of THEME_PRESETS) {
     const button = document.createElement('button');
     const icon = document.createElement('span');
     const name = document.createElement('span');
@@ -221,13 +180,13 @@ function setupSwitcher() {
     key.textContent = preset.key;
 
     button.append(icon, name, key);
-    button.addEventListener('click', () => selectPreset(preset));
+    button.addEventListener('click', () => void selectPreset(preset));
     if (preset.theme) {
       button.addEventListener('pointerenter', () => {
-        window.prepareLilyTheme?.(preset.theme).catch(() => {});
+        void prepareTheme(preset.theme, { idle: true });
       });
       button.addEventListener('focus', () => {
-        window.prepareLilyTheme?.(preset.theme).catch(() => {});
+        void prepareTheme(preset.theme, { idle: true });
       });
     }
     options.append(button);
@@ -245,10 +204,10 @@ function setupSwitcher() {
       return;
     }
 
-    const preset = PRESETS.find((option) => option.key === event.key);
+    const preset = THEME_PRESETS.find((option) => option.key === event.key);
     if (preset) {
       event.preventDefault();
-      selectPreset(preset);
+      void selectPreset(preset);
     }
   });
 
@@ -295,6 +254,6 @@ setInterval(() => {
   const date = getSydneyDate();
   if (date.key !== currentDateKey) {
     const theme = getDailyTheme();
-    preloadTheme(theme).then(() => applyTheme(theme, false));
+    prepareTheme(theme).then(() => applyTheme(theme, false));
   }
 }, 60_000);

@@ -3,11 +3,18 @@ import {
   Mesh,
   Program,
   Renderer,
-  Texture,
   Transform,
   Triangle,
   Vec2,
 } from 'ogl';
+import { createLilyTextureCache } from './lily-textures.js';
+import {
+  getCurrentTheme,
+  registerThemePreparer,
+  subscribeTheme,
+  subscribeWeather,
+} from './site-state.js';
+import { THEMES } from './themes.js';
 
 const flower = document.querySelector('[data-lily]');
 const image = flower?.querySelector('img');
@@ -16,7 +23,8 @@ const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const THEME_TRANSITION_MS = 950;
 
 if (flower && image && canvas && !reduceMotion.matches) {
-  startLily().catch(() => {
+  startLily().catch((error) => {
+    console.warn('[lily] Interactive flower could not start.', error);
     flower.classList.remove('is-alive');
     flower.removeAttribute('role');
     flower.removeAttribute('tabindex');
@@ -38,6 +46,9 @@ async function startLily() {
   initialTextureImage.src = image.currentSrc || image.src;
   if (initialTextureImage.decode) await initialTextureImage.decode();
 
+  const initialTheme = getCurrentTheme();
+  if (!initialTheme) throw new Error('A theme is required before the flower starts');
+
   const renderer = new Renderer({
     canvas,
     alpha: true,
@@ -50,20 +61,14 @@ async function startLily() {
   if (!gl) throw new Error('WebGL is unavailable');
 
   gl.clearColor(0, 0, 0, 0);
+  const lifecycle = new AbortController();
 
   const scene = new Transform();
   const pointer = new Vec2(0.5, 0.55);
   const pointerTarget = new Vec2(0.5, 0.55);
-  const initialTexture = new Texture(gl, {
-    image: initialTextureImage,
-    generateMipmaps: false,
-    minFilter: gl.LINEAR,
-    magFilter: gl.LINEAR,
-  });
-  const themeTextures = new Map();
-  const themeTexturePromises = new Map();
-  let currentTexture = initialTexture;
-  let incomingTexture = initialTexture;
+  const textureCache = createLilyTextureCache(gl, initialTheme, initialTextureImage);
+  let currentTexture = textureCache.initialTexture;
+  let incomingTexture = textureCache.initialTexture;
 
   const lilyProgram = new Program(gl, {
     transparent: true,
@@ -370,25 +375,25 @@ async function startLily() {
 
   flower.addEventListener('pointerenter', () => {
     ensureAnimation();
-  });
+  }, { signal: lifecycle.signal });
   flower.addEventListener('pointermove', (event) => {
     updatePointer(event);
     ensureAnimation();
-  });
+  }, { signal: lifecycle.signal });
   flower.addEventListener('pointerleave', () => {
     hoverTarget = 0;
     pointerTarget.set(0.5, 0.55);
     tiltTargetX = 0;
     tiltTargetY = 0;
     ensureAnimation();
-  });
-  flower.addEventListener('click', releasePigment);
+  }, { signal: lifecycle.signal });
+  flower.addEventListener('click', releasePigment, { signal: lifecycle.signal });
   flower.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       releasePigment();
     }
-  });
+  }, { signal: lifecycle.signal });
   function applyWeather(weather) {
     if (!weather) return;
 
@@ -423,79 +428,9 @@ async function startLily() {
     if (weatherIsMoving) ensureAnimation();
   }
 
-  function waitForIdleFrame() {
-    return new Promise((resolve) => {
-      if (window.requestIdleCallback) {
-        window.requestIdleCallback(resolve, { timeout: 120 });
-      } else {
-        setTimeout(resolve, 32);
-      }
-    });
-  }
-
-  function prepareThemeTexture(theme, useIdleTime = false) {
-    if (!theme) return Promise.resolve(null);
-    if (themeTextures.has(theme.id)) {
-      return Promise.resolve(themeTextures.get(theme.id));
-    }
-    if (themeTexturePromises.has(theme.id)) {
-      return themeTexturePromises.get(theme.id);
-    }
-
-    const preparation = (async () => {
-      const nextImage = theme.imageElement || new Image();
-      if (!theme.imageElement) nextImage.src = theme.image;
-
-      if (nextImage.decode) {
-        await nextImage.decode();
-      } else if (!nextImage.complete) {
-        await new Promise((resolve, reject) => {
-          nextImage.addEventListener('load', resolve, { once: true });
-          nextImage.addEventListener('error', reject, { once: true });
-        });
-      }
-
-      let textureImage = nextImage;
-      if (window.createImageBitmap && nextImage.naturalWidth > 900) {
-        try {
-          textureImage = await createImageBitmap(nextImage, {
-            imageOrientation: 'flipY',
-            resizeWidth: 900,
-            resizeHeight: 900,
-            resizeQuality: 'high',
-          });
-        } catch {
-          textureImage = nextImage;
-        }
-      }
-
-      const texture = new Texture(gl, {
-        image: textureImage,
-        generateMipmaps: false,
-        minFilter: gl.LINEAR,
-        magFilter: gl.LINEAR,
-      });
-
-      if (useIdleTime) await waitForIdleFrame();
-
-      // Upload while the old flower is still completely visible. The ripple
-      // can then use the texture without stalling its first animation frame.
-      texture.update(1);
-      themeTextures.set(theme.id, texture);
-      themeTexturePromises.delete(theme.id);
-      return texture;
-    })().catch((error) => {
-      themeTexturePromises.delete(theme.id);
-      throw error;
-    });
-
-    themeTexturePromises.set(theme.id, preparation);
-    return preparation;
-  }
-
   async function transitionThemeImage(theme) {
     const requestId = ++themeRequestId;
-    const preparedTexture = await prepareThemeTexture(theme);
+    const preparedTexture = await textureCache.prepare(theme);
     if (requestId !== themeRequestId || !preparedTexture) return;
 
     incomingTexture = preparedTexture;
@@ -514,7 +449,6 @@ async function startLily() {
 
     const shouldTransition = currentThemeId !== null && currentThemeId !== theme.id;
     currentThemeId = theme.id;
-    if (!shouldTransition) themeTextures.set(theme.id, currentTexture);
 
     const light = new Float32Array(theme.light);
     const deep = new Float32Array(theme.deep);
@@ -526,36 +460,32 @@ async function startLily() {
       `Interactive ${theme.colorName} spider lily. Move the pointer or press Enter to release pigment.`,
     );
     if (shouldTransition) {
-      transitionThemeImage(theme).catch(() => {});
+      transitionThemeImage(theme).catch((error) => {
+        console.warn(`[lily] Could not transition to the ${theme.id} texture.`, error);
+      });
     } else {
       renderer.render({ scene });
     }
   }
 
-  window.addEventListener('siteweatherchange', (event) => {
-    applyWeather(event.detail);
-  });
-  window.addEventListener('sitethemechange', (event) => {
-    applyTheme(event.detail);
-  });
-  window.prepareLilyTheme = prepareThemeTexture;
+  const unregisterThemePreparer = registerThemePreparer(
+    (theme, options) => textureCache.prepare(theme, options),
+  );
+  const unsubscribeTheme = subscribeTheme(applyTheme);
+  const unsubscribeWeather = subscribeWeather(applyWeather);
+
   image.addEventListener('load', () => {
     resize();
     ensureAnimation();
-  });
+  }, { signal: lifecycle.signal });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && weatherIsMoving) ensureAnimation();
-  });
-  window.addEventListener('resize', resize);
+  }, { signal: lifecycle.signal });
+  window.addEventListener('resize', resize, { signal: lifecycle.signal });
   reduceMotion.addEventListener('change', (event) => {
     if (!event.matches) return;
-    if (frameId) cancelAnimationFrame(frameId);
-    frameId = 0;
-    flower.classList.remove('is-alive');
-    flower.removeAttribute('role');
-    flower.removeAttribute('tabindex');
-    flower.removeAttribute('aria-label');
-  });
+    cleanup();
+  }, { signal: lifecycle.signal });
 
   flower.setAttribute('role', 'button');
   flower.setAttribute('tabindex', '0');
@@ -565,19 +495,31 @@ async function startLily() {
   );
 
   resize();
-  applyWeather(window.siteWeather);
-  applyTheme(window.siteTheme);
   flower.classList.add('is-alive');
 
-  const warmThemeTextures = async () => {
-    for (const theme of window.siteThemes || []) {
-      if (theme.id === currentThemeId) continue;
-      try {
-        await prepareThemeTexture(theme, true);
-      } catch {
-        // On-demand preparation still retries if an idle preload fails.
-      }
-    }
-  };
-  waitForIdleFrame().then(warmThemeTextures);
+  void textureCache.warm(THEMES, currentThemeId, (theme, error) => {
+    console.warn(`[lily] Could not warm the ${theme.id} texture.`, error);
+  });
+
+  let cleanedUp = false;
+  function cleanup() {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    lifecycle.abort();
+    if (frameId) cancelAnimationFrame(frameId);
+    frameId = 0;
+    unregisterThemePreparer();
+    unsubscribeTheme();
+    unsubscribeWeather();
+    textureCache.destroy();
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    flower.classList.remove('is-alive');
+    flower.removeAttribute('role');
+    flower.removeAttribute('tabindex');
+    flower.removeAttribute('aria-label');
+  }
+
+  window.addEventListener('pagehide', (event) => {
+    if (!event.persisted) cleanup();
+  }, { signal: lifecycle.signal });
 }

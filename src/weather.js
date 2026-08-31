@@ -1,3 +1,5 @@
+import { publishWeather } from './site-state.js';
+
 const SYDNEY_TIME_ZONE = 'Australia/Sydney';
 const WEATHER_REFRESH_MS = 15 * 60 * 1000;
 const WEATHER_CACHE_KEY = 'ben-mitchell-sydney-weather-v1';
@@ -244,7 +246,6 @@ function applyWeather(weather) {
   };
 
   currentWeather = completeWeather;
-  window.siteWeather = completeWeather;
   document.body.dataset.weather = completeWeather.kind;
 
   if (weatherIcon) {
@@ -256,9 +257,7 @@ function applyWeather(weather) {
 
   updateConditionsLabel();
   ambientWeather?.setWeather(completeWeather);
-  window.dispatchEvent(
-    new CustomEvent('siteweatherchange', { detail: completeWeather }),
-  );
+  publishWeather(completeWeather);
 }
 
 function readCachedWeather() {
