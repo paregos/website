@@ -209,12 +209,11 @@ off visual or interactive changes, also check:
 
 ## Deployment
 
-GitHub Pages deployment is defined in `.github/workflows/deploy-pages.yml`.
-The site is a project Pages site, so GitHub Actions builds it with the Vite base
-path `/website/`; local development and non-Pages hosts use `/`. Do not change
-that path unless the repository name changes or the site moves to a custom
-domain. Before deploying for the first time, enable **GitHub Actions** as the
-repository's Pages source in **Settings → Pages**.
+GitHub Pages deployment is defined in `.github/workflows/deploy-pages.yml` and
+served from the custom domain `https://benmitchell.me`. Vite therefore uses
+the root base path `/`; changing it back to `/website/` will break built asset
+URLs on the custom domain. The legacy project URL is not the canonical site.
+GitHub Actions is the repository's Pages source in **Settings → Pages**.
 
 The optional Spotify Worker is deployed independently with `npm run
 worker:deploy`. It exposes only `/now-playing`, accepts requests from the

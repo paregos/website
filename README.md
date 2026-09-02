@@ -3,7 +3,7 @@
 A small, single-page personal website deployed from GitHub Actions to GitHub
 Pages:
 
-<https://paregos.github.io/website/>
+<https://benmitchell.me/>
 
 For the visual system and code map, read [`AGENTS.md`](AGENTS.md). This README
 also records the one external integration that needs occasional maintenance.
@@ -25,9 +25,9 @@ GitHub Pages browser → Cloudflare Worker → Spotify Web API
 - Local OAuth helper: `scripts/spotify-authorize.mjs`
 
 The Worker returns only a track/episode name, artist/show, and Spotify URL. It
-allows requests from `https://paregos.github.io` and local Vite development.
-The site hides the whole row if nothing is playing or the Worker cannot reach
-Spotify.
+allows requests from `https://benmitchell.me`, its `www` alias, the legacy
+GitHub Pages origin, and local Vite development. The site hides the whole row
+if nothing is playing or the Worker cannot reach Spotify.
 
 ### Secrets
 
@@ -83,7 +83,7 @@ line quietly disappears while music is playing, reauthorise it as follows.
 5. Play a track and test the Worker from the public site origin:
 
    ```sh
-   curl -sS -H 'Origin: https://paregos.github.io' \
+   curl -sS -H 'Origin: https://benmitchell.me' \
      https://ben-now-playing.ben-mitchell-website.workers.dev/now-playing
    ```
 
